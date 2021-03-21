@@ -66,12 +66,63 @@ export default class ListGovernmentEmployeesService {
       await searchWithFiltersButtonElement.click();
     }
 
+    await page.waitForSelector(
+      '#spinner[style="margin: 50px 50% 500px; display: none;"]',
+    );
+
     await this.detailOrgan.execute({
       page,
       superior_army_organ,
       army_organ,
     });
 
-    return [];
+    await page.waitForSelector(
+      '#spinner[style="margin: 50px 50% 500px; display: none;"]',
+    );
+
+    /* istanbul ignore next */
+    const governmentEmployees = await page.evaluate(
+      (): GovernmentEmployee[] => {
+        const TYPE_COLUMN_SELECTOR = 'td:nth-child(2) > span';
+        const CPF_COLUMN_SELECTOR = 'td.coluna-cpf > span';
+        const NAME_COLUMN_SELECTOR = 'td.coluna-livre.sorting_1 > span';
+        const REGISTRATION_COLUMN_SELECTOR = 'td:nth-child(7) > span';
+
+        const data: GovernmentEmployee[] = [];
+
+        const rows = document.querySelectorAll('#lista > tbody > tr');
+
+        rows.forEach(row => {
+          const type = row
+            .querySelector(TYPE_COLUMN_SELECTOR)
+            ?.textContent?.trim();
+
+          const cpf = row
+            .querySelector(CPF_COLUMN_SELECTOR)
+            ?.textContent?.trim();
+
+          const name = row
+            .querySelector(NAME_COLUMN_SELECTOR)
+            ?.textContent?.trim();
+
+          const registration = row
+            .querySelector(REGISTRATION_COLUMN_SELECTOR)
+            ?.textContent?.trim();
+
+          data.push({
+            type,
+            cpf,
+            name,
+            registration,
+          } as GovernmentEmployee);
+        });
+
+        return data;
+      },
+    );
+
+    await browser.close();
+
+    return governmentEmployees;
   }
 }

@@ -17,6 +17,8 @@ describe('ListGovernmentEmployees', () => {
   it('should be able to list government employees', async () => {
     const governmentEmployees = await listGovernmentEmployees.execute({
       employee_types: ['militar'],
+      superior_army_organ: 'Ministério da Defesa',
+      army_organ: 'Comando da Aeronáutica',
     });
 
     expect(governmentEmployees).toEqual(expect.arrayContaining([]));
