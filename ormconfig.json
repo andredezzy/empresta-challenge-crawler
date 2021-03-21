@@ -1,0 +1,15 @@
+[
+  {
+    "name": "default",
+    "type": "mongodb",
+    "host": "localhost",
+    "port": 27017,
+    "username": "empresta",
+    "password": "mongo_password_development",
+    "database": "empresta-challenge-crawler",
+    "useUnifiedTopology": true,
+    "entities": [
+      "src/modules/**/infra/typeorm/schemas/*.ts"
+    ]
+  }
+]
