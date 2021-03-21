@@ -14,7 +14,6 @@ export default class GovernmentEmployeesController {
 
     const {
       government_employees,
-      current_page,
       total_pages,
     } = await listGovernmentEmployees.execute({
       employee_types,
@@ -23,7 +22,6 @@ export default class GovernmentEmployeesController {
       page: Number(page),
     });
 
-    response.header('X-Page', String(current_page));
     response.header('X-Total-Pages', String(total_pages));
 
     return response.json(government_employees);

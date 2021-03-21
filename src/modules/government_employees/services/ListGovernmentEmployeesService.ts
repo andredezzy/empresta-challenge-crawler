@@ -64,87 +64,95 @@ export default class ListGovernmentEmployeesService {
       headless: false,
     });
 
-    const page = await browser.newPage();
+    try {
+      const page = await browser.newPage();
 
-    await page.goto(PORTAL_TRANSPARENCIA_SERVIDORES_ORGAO_URL, {
-      waitUntil: 'networkidle2',
-    });
+      await page.goto(PORTAL_TRANSPARENCIA_SERVIDORES_ORGAO_URL, {
+        waitUntil: 'networkidle2',
+      });
 
-    await this.applyGovernmentEmployeeTypeFilter.execute({
-      page,
-      employee_types,
-    });
+      await this.applyGovernmentEmployeeTypeFilter.execute({
+        page,
+        employee_types,
+      });
 
-    const searchWithFiltersButtonElement = await page.$(
-      SEARCH_WITH_FILTERS_BUTTON_ELEMENT_SELECTOR,
-    );
+      const searchWithFiltersButtonElement = await page.$(
+        SEARCH_WITH_FILTERS_BUTTON_ELEMENT_SELECTOR,
+      );
 
-    if (searchWithFiltersButtonElement) {
-      await searchWithFiltersButtonElement.click();
+      /* istanbul ignore next */
+      const searchWithFiltersButtonElementStyleAttr = await page.$eval(
+        SEARCH_WITH_FILTERS_BUTTON_ELEMENT_SELECTOR,
+        el => el.getAttribute('style'),
+      );
+
+      if (!searchWithFiltersButtonElementStyleAttr?.includes('display: none')) {
+        await searchWithFiltersButtonElement?.click();
+      }
+
+      await page.waitForSelector(FINISH_LOADING_SPINNER_ELEMENT_SELECTOR);
+
+      await this.detailOrgan.execute({
+        page,
+        superior_army_organ,
+        army_organ,
+      });
+
+      await page.waitForSelector(FINISH_LOADING_SPINNER_ELEMENT_SELECTOR);
+
+      const {
+        current_page,
+        total_pages,
+      } = await this.governmentEmployeesPagination.execute({ page, goto_page });
+
+      /* istanbul ignore next */
+      const governmentEmployees = await page.evaluate(
+        (): GovernmentEmployee[] => {
+          const TYPE_COLUMN_SELECTOR = 'td:nth-child(2) > span';
+          const CPF_COLUMN_SELECTOR = 'td.coluna-cpf > span';
+          const NAME_COLUMN_SELECTOR = 'td.coluna-livre.sorting_1 > span';
+          const REGISTRATION_COLUMN_SELECTOR = 'td:nth-child(7) > span';
+
+          const data: GovernmentEmployee[] = [];
+
+          const rows = document.querySelectorAll('#lista > tbody > tr');
+
+          rows.forEach(row => {
+            const type = row
+              .querySelector(TYPE_COLUMN_SELECTOR)
+              ?.textContent?.trim();
+
+            const cpf = row
+              .querySelector(CPF_COLUMN_SELECTOR)
+              ?.textContent?.trim();
+
+            const name = row
+              .querySelector(NAME_COLUMN_SELECTOR)
+              ?.textContent?.trim();
+
+            const registration = row
+              .querySelector(REGISTRATION_COLUMN_SELECTOR)
+              ?.textContent?.trim();
+
+            data.push({
+              type,
+              cpf,
+              name,
+              registration,
+            } as GovernmentEmployee);
+          });
+
+          return data;
+        },
+      );
+
+      return {
+        government_employees: governmentEmployees,
+        current_page: goto_page || 1,
+        total_pages,
+      };
+    } finally {
+      await browser.close();
     }
-
-    await page.waitForSelector(FINISH_LOADING_SPINNER_ELEMENT_SELECTOR);
-
-    await this.detailOrgan.execute({
-      page,
-      superior_army_organ,
-      army_organ,
-    });
-
-    await page.waitForSelector(FINISH_LOADING_SPINNER_ELEMENT_SELECTOR);
-
-    const {
-      current_page,
-      total_pages,
-    } = await this.governmentEmployeesPagination.execute({ page, goto_page });
-
-    /* istanbul ignore next */
-    const governmentEmployees = await page.evaluate(
-      (): GovernmentEmployee[] => {
-        const TYPE_COLUMN_SELECTOR = 'td:nth-child(2) > span';
-        const CPF_COLUMN_SELECTOR = 'td.coluna-cpf > span';
-        const NAME_COLUMN_SELECTOR = 'td.coluna-livre.sorting_1 > span';
-        const REGISTRATION_COLUMN_SELECTOR = 'td:nth-child(7) > span';
-
-        const data: GovernmentEmployee[] = [];
-
-        const rows = document.querySelectorAll('#lista > tbody > tr');
-
-        rows.forEach(row => {
-          const type = row
-            .querySelector(TYPE_COLUMN_SELECTOR)
-            ?.textContent?.trim();
-
-          const cpf = row
-            .querySelector(CPF_COLUMN_SELECTOR)
-            ?.textContent?.trim();
-
-          const name = row
-            .querySelector(NAME_COLUMN_SELECTOR)
-            ?.textContent?.trim();
-
-          const registration = row
-            .querySelector(REGISTRATION_COLUMN_SELECTOR)
-            ?.textContent?.trim();
-
-          data.push({
-            type,
-            cpf,
-            name,
-            registration,
-          } as GovernmentEmployee);
-        });
-
-        return data;
-      },
-    );
-
-    await browser.close();
-
-    return {
-      government_employees: governmentEmployees,
-      current_page,
-      total_pages,
-    };
   }
 }

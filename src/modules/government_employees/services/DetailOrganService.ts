@@ -58,5 +58,7 @@ export default class DetailOrganService {
       superior_army_organ,
       army_organ,
     );
+
+    await page.waitForNavigation({ waitUntil: 'networkidle2' });
   }
 }
