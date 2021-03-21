@@ -20,7 +20,7 @@
     "prepare": "husky install"
   },
   "lint-staged": {
-    "packages/**/*.{ts,tsx}": [
+    "**/*.{ts}": [
       "yarn lint:fix",
       "yarn test --bail --findRelatedTests"
     ]
