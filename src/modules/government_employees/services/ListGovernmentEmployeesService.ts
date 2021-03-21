@@ -7,17 +7,28 @@ import GovernmentEmployee, {
 import IGovernmentEmployeeSearchLogsRepository from '@modules/government_employees/repositories/IGovernmentEmployeeSearchLogsRepository';
 import ApplyGovernmentEmployeeTypeFilterService from '@modules/government_employees/services/ApplyGovernmentEmployeeTypeFilterService';
 import DetailOrganService from '@modules/government_employees/services/DetailOrganService';
+import GovernmentEmployeesPaginationService from '@modules/government_employees/services/GovernmentEmployeesPaginationService';
 
 const PORTAL_TRANSPARENCIA_SERVIDORES_ORGAO_URL =
   'http://www.portaltransparencia.gov.br/servidores/orgao';
 
-const SEARCH_WITH_FILTERS_BUTTON_ELEMENT =
+const SEARCH_WITH_FILTERS_BUTTON_ELEMENT_SELECTOR =
   '#box-filtros-aplicados-com-botao > p > button.btn-consultar.btn-filtros-aplicados-consultar';
+
+export const FINISH_LOADING_SPINNER_ELEMENT_SELECTOR =
+  '#spinner[style="margin: 50px 50% 500px; display: none;"]';
 
 interface IRequest {
   employee_types?: EmployeeType[];
   superior_army_organ: string;
   army_organ: string;
+  page?: number;
+}
+
+interface IResponse {
+  government_employees: GovernmentEmployee[];
+  current_page: number;
+  total_pages: number;
 }
 
 @injectable()
@@ -26,19 +37,23 @@ export default class ListGovernmentEmployeesService {
 
   private detailOrgan: DetailOrganService;
 
+  private governmentEmployeesPagination: GovernmentEmployeesPaginationService;
+
   constructor(
     @inject('GovernmentEmployeeSearchLogsRepository')
     private governmentEmployeeSearchLogsRepository: IGovernmentEmployeeSearchLogsRepository,
   ) {
     this.applyGovernmentEmployeeTypeFilter = new ApplyGovernmentEmployeeTypeFilterService();
     this.detailOrgan = new DetailOrganService();
+    this.governmentEmployeesPagination = new GovernmentEmployeesPaginationService();
   }
 
   public async execute({
     employee_types,
     superior_army_organ,
     army_organ,
-  }: IRequest): Promise<GovernmentEmployee[]> {
+    page: goto_page,
+  }: IRequest): Promise<IResponse> {
     const browser = await puppeteer.launch({
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
       ignoreHTTPSErrors: true,
@@ -51,7 +66,9 @@ export default class ListGovernmentEmployeesService {
 
     const page = await browser.newPage();
 
-    await page.goto(PORTAL_TRANSPARENCIA_SERVIDORES_ORGAO_URL);
+    await page.goto(PORTAL_TRANSPARENCIA_SERVIDORES_ORGAO_URL, {
+      waitUntil: 'networkidle2',
+    });
 
     await this.applyGovernmentEmployeeTypeFilter.execute({
       page,
@@ -59,16 +76,14 @@ export default class ListGovernmentEmployeesService {
     });
 
     const searchWithFiltersButtonElement = await page.$(
-      SEARCH_WITH_FILTERS_BUTTON_ELEMENT,
+      SEARCH_WITH_FILTERS_BUTTON_ELEMENT_SELECTOR,
     );
 
     if (searchWithFiltersButtonElement) {
       await searchWithFiltersButtonElement.click();
     }
 
-    await page.waitForSelector(
-      '#spinner[style="margin: 50px 50% 500px; display: none;"]',
-    );
+    await page.waitForSelector(FINISH_LOADING_SPINNER_ELEMENT_SELECTOR);
 
     await this.detailOrgan.execute({
       page,
@@ -76,9 +91,12 @@ export default class ListGovernmentEmployeesService {
       army_organ,
     });
 
-    await page.waitForSelector(
-      '#spinner[style="margin: 50px 50% 500px; display: none;"]',
-    );
+    await page.waitForSelector(FINISH_LOADING_SPINNER_ELEMENT_SELECTOR);
+
+    const {
+      current_page,
+      total_pages,
+    } = await this.governmentEmployeesPagination.execute({ page, goto_page });
 
     /* istanbul ignore next */
     const governmentEmployees = await page.evaluate(
@@ -123,6 +141,10 @@ export default class ListGovernmentEmployeesService {
 
     await browser.close();
 
-    return governmentEmployees;
+    return {
+      government_employees: governmentEmployees,
+      current_page,
+      total_pages,
+    };
   }
 }

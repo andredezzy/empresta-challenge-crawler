@@ -7,12 +7,6 @@ type EmployeeTypeLabelSelectors = {
   [K in EmployeeType]: string;
 };
 
-const EMPLOYEE_TYPE_BUTTON_ELEMENT_SELECTOR =
-  '#id-box-filtro > div > div > ul > li:nth-child(2) > div > button';
-
-const APPLY_EMPLOYEE_TYPE_FILTERS_ELEMENT_BUTTON =
-  '#id-box-filtro > div > div > ul > li:nth-child(2) > div > div > div > div.gaveta__corpo > div.btn-group > ul > li:nth-child(2) > input';
-
 const EMPLOYEE_TYPE_CHECKBOX_SELECTORS: EmployeeTypeLabelSelectors = {
   militar:
     '#id-box-filtro > div > div > ul > li:nth-child(2) > div > div > div > div.gaveta__corpo > div.btn-group > ul > li:nth-child(3) > a > label',
@@ -29,11 +23,15 @@ interface IRequest {
 export default class ApplyGovernmentEmployeeTypeFilterService {
   public async execute({ page, employee_types }: IRequest): Promise<void> {
     if (employee_types?.length) {
-      const employeeTypeButtonElement = await page.$(
-        EMPLOYEE_TYPE_BUTTON_ELEMENT_SELECTOR,
-      );
+      /* istanbul ignore next */
+      await page.evaluate(() => {
+        const EMPLOYEE_TYPE_BUTTON_ELEMENT_SELECTOR =
+          '#id-box-filtro > div > div > ul > li:nth-child(2) > div > button';
 
-      await employeeTypeButtonElement?.click();
+        document
+          .querySelector<HTMLElement>(EMPLOYEE_TYPE_BUTTON_ELEMENT_SELECTOR)
+          ?.click();
+      });
 
       for (const employee_type of employee_types) {
         const employeeTypeCheckboxElementSelector =
@@ -48,10 +46,16 @@ export default class ApplyGovernmentEmployeeTypeFilterService {
       }
     }
 
-    const applyEmployeeTypeFiltersElementButton = await page.$(
-      APPLY_EMPLOYEE_TYPE_FILTERS_ELEMENT_BUTTON,
-    );
+    /* istanbul ignore next */
+    await page.evaluate(() => {
+      const ADD_EMPLOYEE_TYPE_FILTERS_ELEMENT_BUTTON_SELECTOR =
+        '#id-box-filtro > div > div > ul > li:nth-child(2) > div > div > div > div.gaveta__corpo > div.btn-group > ul > li:nth-child(2) > input';
 
-    await applyEmployeeTypeFiltersElementButton?.click();
+      document
+        .querySelector<HTMLElement>(
+          ADD_EMPLOYEE_TYPE_FILTERS_ELEMENT_BUTTON_SELECTOR,
+        )
+        ?.click();
+    });
   }
 }

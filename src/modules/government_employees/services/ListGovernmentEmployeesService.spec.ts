@@ -19,6 +19,7 @@ describe('ListGovernmentEmployees', () => {
       employee_types: ['militar'],
       superior_army_organ: 'Ministério da Defesa',
       army_organ: 'Comando da Aeronáutica',
+      page: 5,
     });
 
     expect(governmentEmployees).toEqual(expect.arrayContaining([]));

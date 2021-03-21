@@ -14,6 +14,9 @@ governmentEmployeesRouter.get(
       superior_army_organ: Joi.string().required(),
       army_organ: Joi.string().required(),
     },
+    [Segments.QUERY]: {
+      page: Joi.number(),
+    },
   }),
   governmentEmployeesController.index,
 );
