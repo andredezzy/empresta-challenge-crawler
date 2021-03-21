@@ -4,6 +4,7 @@ import { injectable, inject } from 'tsyringe';
 import GovernmentEmployee, {
   EmployeeType,
 } from '@modules/government_employees/infra/typeorm/models/GovernmentEmployee';
+import GovernmentEmployeeSearchLog from '@modules/government_employees/infra/typeorm/schemas/GovernmentEmployeeSearchLog';
 import IGovernmentEmployeeSearchLogsRepository from '@modules/government_employees/repositories/IGovernmentEmployeeSearchLogsRepository';
 import ApplyGovernmentEmployeeTypeFilterService from '@modules/government_employees/services/ApplyGovernmentEmployeeTypeFilterService';
 import DetailOrganService from '@modules/government_employees/services/DetailOrganService';
@@ -23,12 +24,6 @@ interface IRequest {
   superior_army_organ: string;
   army_organ: string;
   page?: number;
-}
-
-interface IResponse {
-  government_employees: GovernmentEmployee[];
-  current_page: number;
-  total_pages: number;
 }
 
 @injectable()
@@ -53,7 +48,7 @@ export default class ListGovernmentEmployeesService {
     superior_army_organ,
     army_organ,
     page: goto_page,
-  }: IRequest): Promise<IResponse> {
+  }: IRequest): Promise<GovernmentEmployeeSearchLog> {
     const browser = await puppeteer.launch({
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
       ignoreHTTPSErrors: true,
@@ -61,7 +56,7 @@ export default class ListGovernmentEmployeesService {
         width: 1920,
         height: 1080,
       },
-      headless: false,
+      headless: true,
     });
 
     try {
@@ -146,11 +141,18 @@ export default class ListGovernmentEmployeesService {
         },
       );
 
-      return {
-        government_employees: governmentEmployees,
-        current_page: goto_page || 1,
-        total_pages,
-      };
+      const governmentEmployeeSearchLogs = await this.governmentEmployeeSearchLogsRepository.create(
+        {
+          government_employees: governmentEmployees,
+          employee_types: employee_types || [],
+          superior_army_organ,
+          army_organ,
+          page: current_page,
+          total_pages,
+        },
+      );
+
+      return governmentEmployeeSearchLogs;
     } finally {
       await browser.close();
     }

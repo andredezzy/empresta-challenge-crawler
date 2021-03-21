@@ -16,14 +16,19 @@ describe('ListGovernmentEmployees', () => {
   });
 
   it('should be able to list government employees with employee type filters', async () => {
-    const governmentEmployees = await listGovernmentEmployees.execute({
+    const {
+      _id,
+      government_employees,
+      page,
+      total_pages,
+    } = await listGovernmentEmployees.execute({
       employee_types: ['militar'],
       superior_army_organ: 'Ministério da Defesa',
       army_organ: 'Comando da Aeronáutica',
     });
 
-    expect(governmentEmployees).toEqual({
-      government_employees: expect.arrayContaining([
+    expect(government_employees).toEqual(
+      expect.arrayContaining([
         {
           type: expect.any(String),
           cpf: expect.any(String),
@@ -31,21 +36,43 @@ describe('ListGovernmentEmployees', () => {
           registration: expect.any(String),
         },
       ]),
-      current_page: 1,
-      total_pages: expect.any(Number),
-    });
+    );
+
+    expect(page).toEqual(1);
+    expect(total_pages).toEqual(expect.any(Number));
+
+    const createdGovernmentEmployeeSearchLog = await fakeGovernmentEmployeeSearchLogsRepository.findById(
+      _id,
+    );
+
+    expect(createdGovernmentEmployeeSearchLog).toEqual(
+      expect.objectContaining({
+        government_employees: expect.arrayContaining([
+          { ...government_employees[0] },
+        ]),
+        employee_types: ['militar'],
+        superior_army_organ: 'Ministério da Defesa',
+        army_organ: 'Comando da Aeronáutica',
+        page: 1,
+        total_pages,
+      }),
+    );
   });
 
   it('should be able to list government employees with employee type filters and pagination', async () => {
-    const governmentEmployees = await listGovernmentEmployees.execute({
+    const {
+      government_employees,
+      page,
+      total_pages,
+    } = await listGovernmentEmployees.execute({
       employee_types: ['militar'],
       superior_army_organ: 'Ministério da Defesa',
       army_organ: 'Comando da Aeronáutica',
       page: 5,
     });
 
-    expect(governmentEmployees).toEqual({
-      government_employees: expect.arrayContaining([
+    expect(government_employees).toEqual(
+      expect.arrayContaining([
         {
           type: expect.any(String),
           cpf: expect.any(String),
@@ -53,9 +80,10 @@ describe('ListGovernmentEmployees', () => {
           registration: expect.any(String),
         },
       ]),
-      current_page: 5,
-      total_pages: expect.any(Number),
-    });
+    );
+
+    expect(page).toEqual(5);
+    expect(total_pages).toEqual(expect.any(Number));
   });
 
   it('should not be able to list government employees with employee type filters and page greater than total pages', async () => {
@@ -70,13 +98,17 @@ describe('ListGovernmentEmployees', () => {
   });
 
   it('should be able to list government employees with pagination without employee type filters', async () => {
-    const governmentEmployees = await listGovernmentEmployees.execute({
+    const {
+      government_employees,
+      page,
+      total_pages,
+    } = await listGovernmentEmployees.execute({
       superior_army_organ: 'Ministério da Defesa',
       army_organ: 'Comando da Aeronáutica',
     });
 
-    expect(governmentEmployees).toEqual({
-      government_employees: expect.arrayContaining([
+    expect(government_employees).toEqual(
+      expect.arrayContaining([
         {
           type: expect.any(String),
           cpf: expect.any(String),
@@ -84,8 +116,9 @@ describe('ListGovernmentEmployees', () => {
           registration: expect.any(String),
         },
       ]),
-      current_page: 1,
-      total_pages: expect.any(Number),
-    });
+    );
+
+    expect(page).toEqual(1);
+    expect(total_pages).toEqual(expect.any(Number));
   });
 });

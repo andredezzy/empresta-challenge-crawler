@@ -72,7 +72,7 @@ export default class GovernmentEmployeesPaginationService {
     }
 
     return {
-      current_page,
+      current_page: goto_page || current_page,
       total_pages,
     };
   }

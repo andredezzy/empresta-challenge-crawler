@@ -7,7 +7,9 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-import GovernmentEmployee from '@modules/government_employees/infra/typeorm/models/GovernmentEmployee';
+import GovernmentEmployee, {
+  EmployeeType,
+} from '@modules/government_employees/infra/typeorm/models/GovernmentEmployee';
 
 @Entity('government_employee_search_logs')
 export default class GovernmentEmployeeSearchLog {
@@ -16,6 +18,21 @@ export default class GovernmentEmployeeSearchLog {
 
   @Column()
   government_employees: GovernmentEmployee[];
+
+  @Column()
+  employee_types: EmployeeType[];
+
+  @Column()
+  superior_army_organ: string;
+
+  @Column()
+  army_organ: string;
+
+  @Column()
+  page: number;
+
+  @Column()
+  total_pages: number;
 
   @CreateDateColumn()
   created_at: Date;

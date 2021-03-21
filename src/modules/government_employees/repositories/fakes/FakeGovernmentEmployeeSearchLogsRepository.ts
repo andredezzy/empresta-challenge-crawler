@@ -1,4 +1,3 @@
-import { classToClass } from 'class-transformer';
 import { merge } from 'lodash';
 import { ObjectID } from 'mongodb';
 
@@ -10,14 +9,34 @@ class FakeGovernmentEmployeeSearchLogsRepository
   implements IGovernmentEmployeeSearchLogsRepository {
   private governmentEmployeeSearchLogs: GovernmentEmployeeSearchLog[] = [];
 
+  public async findById(
+    id: ObjectID,
+  ): Promise<GovernmentEmployeeSearchLog | undefined> {
+    const findGovernmentEmployeeSearchLog = this.governmentEmployeeSearchLogs.find(
+      governmentEmployeeSearchLog => governmentEmployeeSearchLog._id === id,
+    );
+
+    return findGovernmentEmployeeSearchLog;
+  }
+
   public async create({
     government_employees,
+    employee_types,
+    superior_army_organ,
+    army_organ,
+    page,
+    total_pages,
   }: ICreateGovernmentEmployeeSearchLog): Promise<GovernmentEmployeeSearchLog> {
     const governmentEmployeeSearchLog = new GovernmentEmployeeSearchLog();
 
     merge(governmentEmployeeSearchLog, {
-      id: new ObjectID(),
+      _id: new ObjectID(),
       government_employees,
+      employee_types,
+      superior_army_organ,
+      army_organ,
+      page,
+      total_pages,
     });
 
     this.governmentEmployeeSearchLogs.push(governmentEmployeeSearchLog);
